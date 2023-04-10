@@ -2,13 +2,18 @@
 #include "Circle.cpp"
 #include "omp.h"
 
+#define THREAD_NUM 4
 #define BALL_COUNT 700
 
 
 int main(int argc, char *argv[]) {
     int ballCount = BALL_COUNT;
+    int threads = THREAD_NUM;
     if (argc > 1) {
         ballCount = atoi(argv[1]);
+    }
+    if (argc > 2) {
+        threads = atoi(argv[2]);
     }
 
     // Inicializar SDL
@@ -47,16 +52,24 @@ int main(int argc, char *argv[]) {
         }
 
         double start = omp_get_wtime();
+        // Mover círculos
+        #pragma omp parallel num_threads(threads) default(none) shared(circleArray, ballCount)
+        {
+        #pragma omp for
         for (int i = 0; i < ballCount; i++) {
             circleArray[i].move();
         }
 
-        for (int i = 0; i < ballCount; i++) {
-            for (int j = 0; j < ballCount; j++) {
-                if (i != j) {
+        #pragma omp for schedule(dynamic)
+        for (int i = 0; i < ballCount - 1; i++) {
+            for (int j = i + 1; j < ballCount; j++) {
+                // Sección crítica para la detección de colisiones
+                #pragma omp critical
+                {
                     circleArray[i].checkCollision(circleArray[j]);
                 }
             }
+        }
         }
         double end = omp_get_wtime();
         double delta = end - start;
@@ -86,7 +99,7 @@ int main(int argc, char *argv[]) {
 
         // Calcular e imprimir FPS cada segundo
         if (SDL_GetTicks() - fpsTimer >= 1000) {
-            SDL_Log("FPS: %d, sphere calculation time: %lf", frameCounter, delta_per_second / frameCounter);
+            SDL_Log("FPS: %d, sphere calculation time: %lf, thread_num: %i", frameCounter, delta_per_second / frameCounter, threads);
             frameCounter = 0;
             delta_per_second = 0.0;
             fpsTimer = SDL_GetTicks();
