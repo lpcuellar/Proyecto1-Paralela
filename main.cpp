@@ -1,9 +1,10 @@
 #include <SDL.h>
 #include "Circle.cpp"
+#include "omp.h"
 
-
-int main(int argc, char *argv[]) {
-    const int ballCount = 150;
+int main(int argc, char *argv[])
+{
+    const int ballCount = 500;
 
     // Inicializar SDL
     SDL_Init(SDL_INIT_VIDEO);
@@ -26,26 +27,46 @@ int main(int argc, char *argv[]) {
     Uint32 frameStart, frameTime;
     int frameCounter = 0;
     Uint32 frameDelay = 1000 / 120;
+
     Uint32 fpsTimer = SDL_GetTicks();
 
-    while (!quit) {
+    while (!quit)
+    {
         frameStart = SDL_GetTicks();
 
-        while (SDL_PollEvent(&event)) {
-            if (event.type == SDL_QUIT) {
+        while (SDL_PollEvent(&event))
+        {
+            if (event.type == SDL_QUIT)
+            {
                 quit = true;
             }
         }
 
-        for (int i = 0; i < ballCount; i++) {
-            circleArray[i].move();
+// Mover círculos
+#pragma omp parallel num_threads(4) default(none) shared(circleArray, ballCount)
+        {
 
-            for (int j = 0; j < ballCount; j++) {
-                if (i != j) {
-                    circleArray[i].checkCollision(circleArray[j]);
-                }
+#pragma omp for
+            for (int i = 0; i < ballCount; i++)
+            {
+                circleArray[i].move();
             }
 
+#pragma omp for schedule(dynamic)
+            for (int i = 0; i < ballCount; i++)
+            {
+                for (int j = 0; j < ballCount; j++)
+                {
+                    if (i != j)
+                    {
+// Sección crítica para la detección de colisiones
+#pragma omp critical
+                        {
+                            circleArray[i].checkCollision(circleArray[j]);
+                        }
+                    }
+                }
+            }
         }
 
         // Limpiar pantalla
@@ -53,7 +74,8 @@ int main(int argc, char *argv[]) {
         SDL_RenderClear(renderer);
 
         // Dibujar círculos
-        for (int i = 0; i < ballCount; i++) {
+        for (int i = 0; i < ballCount; i++)
+        {
             circleArray[i].draw(renderer);
         }
 
@@ -62,7 +84,8 @@ int main(int argc, char *argv[]) {
 
         // Calcular tiempo por cuadro y ajustar el delay
         frameTime = SDL_GetTicks() - frameStart;
-        if (frameDelay > frameTime) {
+        if (frameDelay > frameTime)
+        {
             SDL_Delay(frameDelay - frameTime);
         }
 
@@ -70,7 +93,8 @@ int main(int argc, char *argv[]) {
         frameCounter++;
 
         // Calcular e imprimir FPS cada segundo
-        if (SDL_GetTicks() - fpsTimer >= 1000) {
+        if (SDL_GetTicks() - fpsTimer >= 1000)
+        {
             SDL_Log("FPS: %d", frameCounter);
             frameCounter = 0;
             fpsTimer = SDL_GetTicks();
