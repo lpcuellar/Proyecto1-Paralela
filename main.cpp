@@ -1,10 +1,10 @@
 #include <SDL.h>
-
 #include "Circle.cpp"
 
-#define BALLS 9
 
 int main(int argc, char *argv[]) {
+    const int ballCount = 150;
+
     // Inicializar SDL
     SDL_Init(SDL_INIT_VIDEO);
 
@@ -15,26 +15,32 @@ int main(int argc, char *argv[]) {
     // Crear renderer
     SDL_Renderer *renderer = SDL_CreateRenderer(window, -1, SDL_RENDERER_ACCELERATED);
 
-
-    // Crear círculo
-
-    Circle circleArray[BALLS];
-    int arrayLength = sizeof(circleArray) / sizeof(Circle);
+    // Crear círculos
+    Circle circleArray[ballCount];
 
     // Esperar evento de salida
     SDL_Event event;
     bool quit = false;
+
+    // Inicializar temporizador para FPS
+    Uint32 frameStart, frameTime;
+    int frameCounter = 0;
+    Uint32 frameDelay = 1000 / 120;
+    Uint32 fpsTimer = SDL_GetTicks();
+
     while (!quit) {
+        frameStart = SDL_GetTicks();
+
         while (SDL_PollEvent(&event)) {
             if (event.type == SDL_QUIT) {
                 quit = true;
             }
         }
 
-        for (int i = 0; i < arrayLength; i++) {
+        for (int i = 0; i < ballCount; i++) {
             circleArray[i].move();
 
-            for (int j = 0; j < arrayLength; j++) {
+            for (int j = 0; j < ballCount; j++) {
                 if (i != j) {
                     circleArray[i].checkCollision(circleArray[j]);
                 }
@@ -47,15 +53,28 @@ int main(int argc, char *argv[]) {
         SDL_RenderClear(renderer);
 
         // Dibujar círculos
-        for (int i = 0; i < arrayLength; i++) {
+        for (int i = 0; i < ballCount; i++) {
             circleArray[i].draw(renderer);
         }
 
         // Actualizar pantalla
         SDL_RenderPresent(renderer);
 
-        // Esperar un poco antes de actualizar la pantalla nuevamente
-        SDL_Delay(1000 / 60);
+        // Calcular tiempo por cuadro y ajustar el delay
+        frameTime = SDL_GetTicks() - frameStart;
+        if (frameDelay > frameTime) {
+            SDL_Delay(frameDelay - frameTime);
+        }
+
+        // Incrementar contador de cuadros
+        frameCounter++;
+
+        // Calcular e imprimir FPS cada segundo
+        if (SDL_GetTicks() - fpsTimer >= 1000) {
+            SDL_Log("FPS: %d", frameCounter);
+            frameCounter = 0;
+            fpsTimer = SDL_GetTicks();
+        }
     }
 
     // Limpiar recursos
