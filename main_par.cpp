@@ -60,14 +60,12 @@ int main(int argc, char *argv[]) {
             circleArray[i].move();
         }
 
+        #pragma omp barrier
+
         #pragma omp for schedule(dynamic)
         for (int i = 0; i < ballCount - 1; i++) {
             for (int j = i + 1; j < ballCount; j++) {
-                // Sección crítica para la detección de colisiones
-                #pragma omp critical
-                {
                     circleArray[i].checkCollision(circleArray[j]);
-                }
             }
         }
         }

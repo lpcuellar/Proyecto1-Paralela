@@ -17,12 +17,18 @@ public:
         randomColor();
     }
 
+    /**
+     * Genera un color aleatorio para el círculo
+     */
     void randomColor() {
         color.r = rand() % 255;
         color.g = rand() % 255;
         color.b = rand() % 255;
     }
 
+    /**
+     * Genera una posición aleatoria para el círculo
+     */
     void randomPosition() {
         centerX = radius + rand() % (WINDOW_WIDTH - 2 * radius);
         centerY = radius + rand() % (WINDOW_HEIGHT - 2 * radius);
@@ -31,38 +37,53 @@ public:
         yVel = rand() % (2 * MOVE_SPEED) - MOVE_SPEED;
     }
 
+
+    /**
+     * Esta funcion se encarga de mover cada circulo en el plano 2d
+     * @param renderer
+     */
     void move() {
-//        SDL_Log("Moving circle to (%d, %d)", centerX, centerY);
         centerX += xVel;
         centerY += yVel;
 
         if (centerX - radius <= 0) {
-            centerX = radius;
-            xVel = -xVel;
+            centerX = radius * 2;
+            xVel = abs(xVel);
         } else if (centerX + radius >= WINDOW_WIDTH) {
-            centerX = WINDOW_WIDTH - radius;
-            xVel = -xVel;
+            centerX = WINDOW_WIDTH - radius * 2;
+            xVel = -abs(xVel);
         }
 
         if (centerY - radius <= 0) {
             centerY = radius;
-            yVel = -yVel;
+            yVel = abs(yVel);
         } else if (centerY + radius >= WINDOW_HEIGHT) {
             centerY = WINDOW_HEIGHT - radius;
-            yVel = -yVel;
+            yVel = -abs(yVel);
         }
 
         if (std::abs(xVel) < MOVE_SPEED) {
-            xVel = xVel < 0 ? -MOVE_SPEED : MOVE_SPEED;
+            if (xVel == 0) {
+                xVel = rand() % 2 == 0 ? -MOVE_SPEED : MOVE_SPEED;
+            } else {
+                xVel = xVel <= 0 ? -MOVE_SPEED : MOVE_SPEED;
+            }
         }
 
         if (std::abs(yVel) < MOVE_SPEED) {
-            yVel = yVel < 0 ? -MOVE_SPEED : MOVE_SPEED;
+            if (yVel == 0) {
+                yVel = rand() % 2 == 0 ? -MOVE_SPEED : MOVE_SPEED;
+            } else {
+                yVel = yVel < 0 ? -MOVE_SPEED : MOVE_SPEED;
+            }
         }
     }
 
+    /**
+     * Esta funcion se encarga de revisar colisiones entre circulos y asi mismo poder calcular la nueva velocidad y la trayectoria
+     * @param renderer
+     */
     void checkCollision(Circle& other) {
-//        SDL_Log("Checking collision between (%d, %d) and (%d, %d)", centerX, centerY, other.centerX, other.centerY);
         int dx = centerX - other.centerX;
         int dy = centerY - other.centerY;
         int radii = radius + other.radius;
@@ -93,22 +114,24 @@ public:
             other.centerY -= overlap * ny * 0.5;
 
             // Verificar si los círculos están dentro de la ventana
-            if (centerX - radius < 0) centerX = radius;
-            if (centerX + radius > WINDOW_WIDTH) centerX = WINDOW_WIDTH - radius;
-            if (centerY - radius < 0) centerY = radius;
-            if (centerY + radius > WINDOW_HEIGHT) centerY = WINDOW_HEIGHT - radius;
+            if (centerX - radius < 0) centerX = radius * 2;
+            if (centerX + radius > WINDOW_WIDTH) centerX = WINDOW_WIDTH - radius * 2;
+            if (centerY - radius < 0) centerY = radius * 2;
+            if (centerY + radius > WINDOW_HEIGHT) centerY = WINDOW_HEIGHT - radius * 2;
 
-            if (other.centerX - other.radius < 0) other.centerX = other.radius;
-            if (other.centerX + other.radius > WINDOW_WIDTH) other.centerX = WINDOW_WIDTH - other.radius;
-            if (other.centerY - other.radius < 0) other.centerY = other.radius;
-            if (other.centerY + other.radius > WINDOW_HEIGHT) other.centerY = WINDOW_HEIGHT - other.radius;
+            if (other.centerX - other.radius < 0) other.centerX = other.radius * 2;
+            if (other.centerX + other.radius > WINDOW_WIDTH) other.centerX = WINDOW_WIDTH - other.radius * 2;
+            if (other.centerY - other.radius < 0) other.centerY = other.radius * 2;
+            if (other.centerY + other.radius > WINDOW_HEIGHT) other.centerY = WINDOW_HEIGHT - other.radius * 2;
         }
     }
 
 
-
+    /**
+     * Esta funcion se encarga de dibujar cada circulo en el plano 2d
+     * @param renderer
+     */
     void draw(SDL_Renderer* renderer) {
-//        SDL_Log("Drawing circle at (%d, %d)", centerX, centerY);
         int r2 = radius * radius;
 
         for (int y = -radius; y <= radius; y++) {

@@ -51,11 +51,9 @@ int main(int argc, char *argv[]) {
             circleArray[i].move();
         }
 
-        for (int i = 0; i < ballCount; i++) {
-            for (int j = 0; j < ballCount; j++) {
-                if (i != j) {
-                    circleArray[i].checkCollision(circleArray[j]);
-                }
+        for (int i = 0; i < ballCount - 1; i++) {
+            for (int j = i + 1; j < ballCount; j++) {
+                circleArray[i].checkCollision(circleArray[j]);
             }
         }
         double end = omp_get_wtime();
